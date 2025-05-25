@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Космічний Турнір: Битва Команд</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #gameOver {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #loadingScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 900;
+        }
+        #teamSelection {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 950;
+        }
+        .menu-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #4CAF50;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .menu-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            max-width: 80%;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .menu-button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .menu-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #4CAF50;
+        }
+        
+        .team-button {
+            position: relative;
+            padding: 18px 30px;
+            font-size: 1.2rem;
+            color: rgba(0, 0, 0, 0.9);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 15px;
+            width: 80%;
+            max-width: 320px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            z-index: 1;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        #team1, #team2, #team3, #team4, #team5 {
+            text-shadow: 0 0 8px rgba(255,255,255,0.3);
+        }
+        .team-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                        rgba(255,255,255,0.1) 0%, 
+                        rgba(255,255,255,0.3) 50%, 
+                        rgba(255,255,255,0.1) 100%);
+            z-index: -1;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+        .team-button:hover::before {
+            opacity: 1;
+            animation: shine 2s infinite;
+        }
+        .team-button::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            background: linear-gradient(135deg, currentColor 0%, rgba(0,0,0,0.7) 100%);
+            border-radius: 48px;
+            z-index: -2;
+        }
+        .team-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .team-button:active {
+            transform: translateY(0);
+        }
+        #team1 {
+            color: #ff4757;
+        }
+        #team2 {
+            color: #7158e2;
+        }
+        #team3 {
+            color: #00d2d3;
+        }
+        #team4 {
+            color: #feca57;
+        }
+        #team5 {
+            color: #1dd1a1;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+        .team-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #ff9ff3, #feca57, #ff6b6b, #48dbfb, #1dd1a1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+            animation: gradient 8s ease infinite;
+            background-size: 400% 400%;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .team-subtitle {
+            font-size: 1rem;
+            margin-bottom: 30px;
+            color: rgba(255,255,255,0.7);
+            max-width: 80%;
+            text-align: center;
+        }
+
+        #gameOver img {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+            object-fit: contain; /* Додано для збереження пропорцій */
+        }
+        #gameOver h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #scoreDisplay {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        #restartButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #restartButton:hover {
+            background-color: #3e8e41;
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            font-size: 16px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .hud-team {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        #loadingProgress {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 300px;
+            height: 10px;
+            border-radius: 5px;
+        }
+        .game-over-message {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+        }
+        /* Додайте ці стилі в розділ style */
+        .team1-bg {
+            background: radial-gradient(circle, #1a0000 0%, #000 100%);
+        }
+
+        .team2-bg {
+            background: radial-gradient(circle, #1a001a 0%, #000 100%);
+        }
+
+        .team3-bg {
+            background: radial-gradient(circle, #001a1a 0%, #000 100%);
+        }
+
+        .team4-bg {
+            background: radial-gradient(circle, #1a1a00 0%, #000 100%);
+        }
+
+        .team5-bg {
+            background: radial-gradient(circle, #001a00 0%, #000 100%);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Екран завантаження -->
+    <div id="loadingScreen">
+        <h1>Завантаження гри...</h1>
+        <progress id="loadingProgress" value="0" max="100"></progress>
+    </div>
+
+    <!-- Головне меню -->
+    <div id="mainMenu">
+        <h1 class="menu-title">Космічний Турнір</h1>
+        <div class="menu-text">
+            Битва команд у космічній арені!<br>
+            Обери свою команду та змагайся за перемогу!<br>
+            Уникай перешкод, збирай бонуси та перемагай суперників!
+        </div>
+        <button class="menu-button" id="startButton">ПОЧАТИ ГРУ</button>
+    </div>
+
+    <!-- Вибір команди -->
+    <div id="teamSelection">
+        <h1 class="team-title">ОБЕРІТЬ КОМАНДУ</h1>
+        <div class="team-subtitle">Ваш вибір вплине на зовнішній вигляд корабля та ворогів</div>
+        <button class="team-button" id="team1">ПЕКЛО</button>
+        <button class="team-button" id="team2">ЦИРК ЛЮМ'ЄР</button>
+        <button class="team-button" id="team3">Y2K</button>
+        <button class="team-button" id="team4">ОДНОГО РАЗУ В КАЗКОВІЛІ</button>
+        <button class="team-button" id="team5">ОСТАННІЙ ОМАН</button>
+    </div>
+
+    <!-- Ігрові елементи -->
+    <div id="hud">
+        <div class="hud-team">Команда: <span id="teamName">Не обрано</span></div>
+        <div>HP: <span id="hpDisplay">100</span></div>
+        <div>Очки: <span id="scoreHud">0</span></div>
+        <div>Рівень: <span id="levelHud">1</span></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOver">
+        <img src="game_over.png" alt="Game Over" width="150" height="150">
+        <h1>Гра завершена!</h1>
+        <div class="game-over-message" id="teamMessage"></div>
+        <div id="scoreDisplay">Ваш рахунок: 0</div>
+        <button id="restartButton">Грати знову</button>
+    </div>
+
+    <script>
+        const MAX_ENEMIES = 20;
+        const MAX_ASTEROIDS = 30;
+        const MAX_COINS = 15;
+        const MAX_BULLETS = 50;
+
+        // Основні змінні гри
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hpDisplay = document.getElementById('hpDisplay');
+        const scoreHud = document.getElementById('scoreHud');
+        const levelHud = document.getElementById('levelHud');
+        const gameOverScreen = document.getElementById('gameOver');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const restartButton = document.getElementById('restartButton');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const mainMenu = document.getElementById('mainMenu');
+        const startButton = document.getElementById('startButton');
+        const teamSelection = document.getElementById('teamSelection');
+        const teamNameDisplay = document.getElementById('teamName');
+        const teamMessage = document.getElementById('teamMessage');
+
+        // Функції для коректного відображення зображень зі збереженням пропорцій
+        function drawImageWithAspect(ctx, img, x, y, targetWidth, targetHeight) {
+            const aspectRatio = img.width / img.height;
+            
+            if (targetWidth / targetHeight > aspectRatio) {
+                targetWidth = targetHeight * aspectRatio;
+            } else {
+                targetHeight = targetWidth / aspectRatio;
+            }
+            
+            ctx.drawImage(img, x - targetWidth/2, y - targetHeight/2, targetWidth, targetHeight);
+        }
+
+        function drawRotatedImageWithAspect(ctx, img, x, y, targetWidth, targetHeight, rotation) {
+            const aspectRatio = img.width / img.height;
+            
+            if (targetWidth / targetHeight > aspectRatio) {
+                targetWidth = targetHeight * aspectRatio;
+            } else {
+                targetHeight = targetWidth / aspectRatio;
+            }
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI/180);
+            ctx.drawImage(img, -targetWidth/2, -targetHeight/2, targetWidth, targetHeight);
+            ctx.restore();
+        }
+
+        // Інформація про команди
+        const teams = {
+            1: { name: "Пекло", color: "#ff4757", message: "Пекельна команда показала свою силу!" },
+            2: { name: "Цирк Люм'єр", color: "#7158e2", message: "Циркове шоу триває! Спробуйте ще раз!" },
+            3: { name: "Y2K", color: "#00d2d3", message: "Y2K помилка! Перезавантажте систему!" },
+            4: { name: "Одного разу в Казковілі", color: "#feca57", message: "Казка ще не закінчилась..." },
+            5: { name: "Останній Оман", color: "#1dd1a1", message: "Подорож триває! Спробуйте ще!" }
+        };
+
+        // Змінні гри
+        let currentTeam = null;
+        let gameRunning = false;
+        let score = 0;
+        let level = 1;
+        let gameTime = 0;
+        let lastBossTime = 0;
+        let lastCoinSpawnTime = 0;
+        let kits = [];
+        let bossActive = false;
+
+        // Базові ймовірності появи об'єктів
+        const baseSpawnRates = {
+            asteroid: 0.005,
+            enemy: 0.005,
+            kit: 0.005,
+            boss: 0.005
+        };
+
+        // Шляхи до зображень для кожної команди
+       const teamImagePaths = {
+            1: { // Пекло
+                player: 'player_hell.svg',
+                enemy: 'enemy_inquisitor.svg',
+                boss: 'boss_demon.svg',
+                asteroid: 'asteroid_lava.svg',
+                coin: 'astronaut_sinner.svg',
+                bullet: 'bullet_fire.svg',
+                enemyBullet: 'bullet_holy.svg',
+                bossBullet: 'bullet_demonic.svg',
+                kit: 'kit_hell.svg'
+            },
+            2: { // Цирк Люм'єр
+                player: 'player_circus.svg',
+                enemy: 'enemy_clown.svg',
+                boss: 'boss_magician.svg',
+                asteroid: 'asteroid_juggling.svg',
+                coin: 'astronaut_acrobat.svg',
+                bullet: 'bullet_magic.svg',
+                enemyBullet: 'bullet_knife.svg',
+                bossBullet: 'bullet_illusion.svg',
+                kit: 'kit_circus.svg'
+            },
+            3: { // Y2K
+                player: 'player_y2k.svg',
+                enemy: 'enemy_virus.svg',
+                boss: 'boss_computer.svg',
+                asteroid: 'asteroid_pixel.svg',
+                coin: 'astronaut_hacker.svg',
+                bullet: 'bullet_data.svg',
+                enemyBullet: 'bullet_error.svg',
+                bossBullet: 'bullet_glitch.svg',
+                kit: 'kit_tech.svg'
+            },
+            4: { // Казковілль
+                player: 'player_fairytale.svg',
+                enemy: 'enemy_witch.svg',
+                boss: 'boss_dragon.svg',
+                asteroid: 'asteroid_mushroom.svg',
+                coin: 'astronaut_princess.svg',
+                bullet: 'bullet_magic.svg',
+                enemyBullet: 'bullet_poison.svg',
+                bossBullet: 'bullet_fireball.svg',
+                kit: 'kit_fairy.svg'
+            },
+            5: { // Останній Оман
+                player: 'player_oman.svg',
+                enemy: 'enemy_genie.svg',
+                boss: 'boss_sultan.svg',
+                asteroid: 'asteroid_arabic.svg',
+                coin: 'astronaut_traveler.svg',
+                bullet: 'bullet_sand.svg',
+                enemyBullet: 'bullet_magic.svg',
+                bossBullet: 'bullet_gold.svg',
+                kit: 'kit_desert.svg'
+            }
+        };
+
+        const images = {};
+        let imagesLoaded = 0;
+        let totalImages = 0;
+
+        // Розміри canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Завантаження зображень
+        function loadImages() {
+            loadingScreen.style.display = "flex";
+            mainMenu.style.display = "none";
+            
+            const baseImages = {
+                player: 'player_hell.svg',
+                enemy: 'enemy_inquisitor.svg',
+                boss: 'boss_demon.svg',
+                asteroid: 'asteroid_lava.svg',
+                coin: 'astronaut_sinner.svg',
+                bullet: 'bullet_fire.svg',
+                enemyBullet: 'bullet_holy.svg',
+                bossBullet: 'bullet_demonic.svg',
+                kit: 'kit_hell.svg'
+            };
+            
+            totalImages = Object.keys(baseImages).length;
+            imagesLoaded = 0;
+            
+            Object.keys(baseImages).forEach(key => {
+                const img = new Image();
+                img.onload = () => {
+                    imagesLoaded++;
+                    loadingProgress.value = (imagesLoaded / totalImages) * 100;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.style.display = 'none';
+                        mainMenu.style.display = 'flex';
+                    }
+                };
+                img.onerror = () => {
+                    console.error(`Помилка завантаження зображення: ${baseImages[key]}`);
+                    images[key] = createPlaceholderImage(key, 1);
+                    imagesLoaded++;
+                    loadingProgress.value = (imagesLoaded / totalImages) * 100;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.style.display = 'none';
+                        mainMenu.style.display = 'flex';
+                    }
+                };
+                img.src = baseImages[key];
+                images[key] = img;
+            });
+        }
+
+        // Завантаження зображень команди
+        function loadTeamImages(team) {
+            loadingScreen.style.display = "flex";
+            teamSelection.style.display = "none";
+            
+            const teamImages = teamImagePaths[team];
+            totalImages = Object.keys(teamImages).length;
+            imagesLoaded = 0;
+            
+            Object.keys(teamImages).forEach(key => {
+                const img = new Image();
+                img.onload = () => {
+                    imagesLoaded++;
+                    loadingProgress.value = (imagesLoaded / totalImages) * 100;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.style.display = 'none';
+                        initGame(team);
+                    }
+                };
+                img.onerror = () => {
+                    console.error(`Помилка завантаження зображення: ${teamImages[key]}`);
+                    images[key] = createPlaceholderImage(key, team);
+                    imagesLoaded++;
+                    loadingProgress.value = (imagesLoaded / totalImages) * 100;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.style.display = 'none';
+                        initGame(team);
+                    }
+                };
+                img.src = teamImages[key];
+                images[key] = img;
+            });
+        }
+
+        // Створення заглушки для зображення
+        function createPlaceholderImage(type, team) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            let width, height, color;
+            
+            switch(type) {
+                case 'player':
+                    width = 40;
+                    height = 60;
+                    color = teams[team].color;
+                    break;
+                case 'enemy':
+                    width = 30;
+                    height = 30;
+                    color = team === 2 ? '#7158e2' : '#ff4757';
+                    break;
+                case 'boss':
+                    width = 80;
+                    height = 80;
+                    color = team === 5 ? '#7158e2' : '#1dd1a1';
+                    break;
+                case 'asteroid':
+                    width = 40;
+                    height = 40;
+                    color = '#95a5a6';
+                    break;
+                case 'coin':
+                    width = 20;
+                    height = 20;
+                    color = '#feca57';
+                    break;
+                case 'bullet':
+                    width = 5;
+                    height = 15;
+                    color = teams[team].color;
+                    break;
+                case 'enemyBullet':
+                    width = 5;
+                    height = 15;
+                    color = team === 2 ? '#7158e2' : '#ff4757';
+                    break;
+                case 'bossBullet':
+                    width = 8;
+                    height = 8;
+                    color = team === 5 ? '#7158e2' : '#1dd1a1';
+                    break;
+                case 'kit':
+                    width = 20;
+                    height = 20;
+                    color = team === 3 || team === 4 ? '#00d2d3' : '#1dd1a1';
+                    break;
+                default:
+                    width = 20;
+                    height = 20;
+                    color = '#ffffff';
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            if (type === 'asteroid') {
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, width/2, 0, Math.PI*2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            } else if (type === 'coin') {
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, width/2, 0, Math.PI*2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$', width/2, height/2);
+            } else {
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, width, height);
+            }
+            
+            const img = new Image();
+            img.src = canvas.toDataURL();
+            return img;
+        }
+
+        // Гравця
+        const player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 60,
+            speed: 8,
+            hp: 100,
+            maxHp: 100,
+            bullets: [],
+            lastShot: 0,
+            shootDelay: 300,
+            targetX: 0,
+            targetY: 0
+        };
+        
+        // Вороги
+        let enemies = [];
+        let asteroids = [];
+        let coins = [];
+        let explosions = [];
+        let boss = null;
+
+        // Ініціалізація гри
+        function initGame(team) {
+            // Видаляємо попередні класи фону
+            document.body.classList.remove('team1-bg', 'team2-bg', 'team3-bg', 'team4-bg', 'team5-bg');
+            // Додаємо клас для поточної команди
+            document.body.classList.add(`team${team}-bg`);
+            currentTeam = team;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.targetX = canvas.width / 2;
+            player.targetY = canvas.height / 2;
+            player.hp = player.maxHp;
+            player.bullets = [];
+            
+            score = 0;
+            level = 1;
+            gameTime = 0;
+            lastBossTime = 0;
+            lastCoinSpawnTime = 0;
+            bossActive = false;
+            
+            enemies = [];
+            asteroids = [];
+            coins = [];
+            explosions = [];
+            boss = null;
+            
+            gameRunning = true;
+            gameOverScreen.style.display = 'none';
+            
+            teamNameDisplay.textContent = teams[team].name;
+            teamNameDisplay.style.color = teams[team].color;
+            hpDisplay.textContent = player.hp;
+            scoreHud.textContent = score;
+            levelHud.textContent = level;
+            
+            gameLoop();
+        }
+
+        // Обробка торкання/миші
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('mousemove', (e) => {
+            player.targetX = e.clientX;
+            player.targetY = e.clientY;
+        });
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            player.targetX = touch.clientX;
+            player.targetY = touch.clientY;
+        }
+
+        // Постріл
+        function shoot() {
+            player.bullets.push({
+                x: player.x,
+                y: player.y - player.height / 2,
+                width: 5,
+                height: 15,
+                speed: 12
+            });
+        }
+
+        // Генерація об'єктів
+        function spawnAsteroid() {
+            if (asteroids.length >= MAX_ASTEROIDS) return;
+            const size = Math.random() * 30 + 20;
+            asteroids.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: Math.random() * 2 + 1 + level * 0.2,
+                hp: Math.floor(size / 10),
+                maxHp: Math.floor(size / 10),
+                rotation: Math.random() * 360
+            });
+        }
+
+        function spawnEnemy() {
+            if (enemies.length >= MAX_ENEMIES) return;
+            const size = Math.random() * 20 + 30;
+            enemies.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: Math.random() * 1.5 + 1 + level * 0.1,
+                hp: 3 + Math.floor(level / 2),
+                maxHp: 3 + Math.floor(level / 2),
+                bullets: [],
+                lastShot: 0,
+                shootDelay: 2000 - level * 100,
+                shootChance: 0.02 + level * 0.005,
+                rotation: Math.random() * 30 - 15,
+                targetRotation: 0,
+                rotationSpeed: 0.5
+            });
+        }
+
+        function spawnCoin() {
+            if (coins.length >= MAX_COINS) return;
+            const size = 35;
+            coins.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: Math.random() * 2 + 1,
+                value: 10 + Math.floor(Math.random() * 20),
+                rotation: 0
+            });
+        }
+
+        function spawnKit() {
+            const size = 25;
+            kits.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: Math.random() * 2 + 1,
+                heal: 5 + Math.floor(Math.random() * 10),
+                rotation: 0
+            });
+        }
+
+        function spawnBoss() {
+            const size = 80;
+            boss = {
+                x: canvas.width / 2 - size / 2,
+                y: -size,
+                width: size,
+                height: size,
+                speed: 1,
+                hp: 50 + level * 20,
+                maxHp: 50 + level * 20,
+                bullets: [],
+                lastShot: 0,
+                shootDelay: 1000 - level * 50,
+                movePattern: 0,
+                moveTimer: 0,
+                rotation: Math.random() * 30 - 15,
+                targetRotation: 0,
+                rotationSpeed: 0.3
+            };
+            bossActive = true;
+            lastBossTime = gameTime;
+        }
+
+        // Перевірка зіткнення
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width &&
+                   obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+
+        // Вибух
+        function createExplosion(x, y, radius) {
+            explosions.push({
+                x: x,
+                y: y,
+                radius: radius / 2,
+                maxRadius: radius,
+                growth: radius / 20,
+                color: `hsl(${Math.random() * 60 + 10}, 100%, 50%)`,
+                alpha: 1
+            });
+        }
+
+        // Оновлення гри
+        function update() {
+            if (!gameRunning) return;
+            
+            gameTime += 16;
+            
+            // Автоматичний постріл
+            const now = Date.now();
+            if (now - player.lastShot > player.shootDelay) {
+                shoot();
+                player.lastShot = now;
+            }
+            
+            // Генерація монет
+            if (gameTime - lastCoinSpawnTime > 2000 && Math.random() < 0.5) {
+                spawnCoin();
+                lastCoinSpawnTime = gameTime;
+            }
+            
+            // Рух гравця
+            const dx = player.targetX - player.x;
+            const dy = player.targetY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > player.speed) {
+                player.x += dx / distance * player.speed;
+                player.y += dy / distance * player.speed;
+            } else {
+                player.x = player.targetX;
+                player.y = player.targetY;
+            }
+            
+            player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
+            player.y = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, player.y));
+            
+            // Оновлення куль гравця
+            for (let i = player.bullets.length - 1; i >= 0; i--) {
+                const bullet = player.bullets[i];
+                bullet.y -= bullet.speed;
+                
+                if (bullet.y + bullet.height < 0) {
+                    player.bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Перевірка зіткнень
+                for (let j = asteroids.length - 1; j >= 0; j--) {
+                    const asteroid = asteroids[j];
+                    if (checkCollision(bullet, asteroid)) {
+                        asteroid.hp--;
+                        player.bullets.splice(i, 1);
+                        createExplosion(bullet.x, bullet.y, 10);
+                        
+                        if (asteroid.hp <= 0) {
+                            createExplosion(asteroid.x + asteroid.width/2, asteroid.y + asteroid.height/2, asteroid.width/2);
+                            asteroids.splice(j, 1);
+                            score += 5;
+                        }
+                        break;
+                    }
+                }
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (checkCollision(bullet, enemy)) {
+                        enemy.hp--;
+                        player.bullets.splice(i, 1);
+                        createExplosion(bullet.x, bullet.y, 10);
+                        
+                        if (enemy.hp <= 0) {
+                            createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2);
+                            enemies.splice(j, 1);
+                            score += 10 + level;
+                        }
+                        break;
+                    }
+                }
+                
+                if (boss && checkCollision(bullet, boss)) {
+                    boss.hp--;
+                    player.bullets.splice(i, 1);
+                    createExplosion(bullet.x, bullet.y, 15);
+                    
+                    if (boss.hp <= 0) {
+                        createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, boss.width);
+                        boss = null;
+                        bossActive = false;
+                        score += 100 + level * 20;
+                        level++;
+                    }
+                }
+            }
+            
+            // Оновлення астероїдів
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                asteroid.y += asteroid.speed;
+                asteroid.rotation += 0.5;
+                
+                if (asteroid.y - asteroid.height > canvas.height) {
+                    asteroids.splice(i, 1);
+                    continue;
+                }
+                
+                if (checkCollision(player, asteroid)) {
+                    player.hp -= 5;
+                    asteroids.splice(i, 1);
+                    createExplosion(asteroid.x + asteroid.width/2, asteroid.y + asteroid.height/2, asteroid.width/2);
+                    
+                    if (player.hp <= 0) gameOver();
+                }
+            }
+            
+            // Оновлення аптечок
+            for (let i = kits.length - 1; i >= 0; i--) {
+                const kit = kits[i];
+                kit.y += kit.speed;
+                kit.rotation += 2;
+                
+                if (kit.y - kit.height > canvas.height) {
+                    kits.splice(i, 1);
+                    continue;
+                }
+                
+                if (checkCollision(player, kit)) {
+                    player.hp = Math.min(player.maxHp, player.hp + kit.heal);
+                    kits.splice(i, 1);
+                }
+            }
+            
+            // Оновлення ворогів
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.y += enemy.speed;
+                
+                if (Math.abs(enemy.rotation - enemy.targetRotation) < 1) {
+                    enemy.targetRotation = Math.random() * 30 - 15;
+                }
+                
+                if (enemy.rotation < enemy.targetRotation) {
+                    enemy.rotation += enemy.rotationSpeed;
+                } else {
+                    enemy.rotation -= enemy.rotationSpeed;
+                }
+                
+                if (enemy.y - enemy.height > canvas.height) {
+                    enemies.splice(i, 1);
+                    continue;
+                }
+                
+                // Постріл ворога
+                const now = Date.now();
+                if (Math.random() < enemy.shootChance && now - enemy.lastShot > enemy.shootDelay) {
+                    enemy.bullets.push({
+                        x: enemy.x + enemy.width/2,
+                        y: enemy.y + enemy.height,
+                        width: 5,
+                        height: 15,
+                        speed: 5
+                    });
+                    enemy.lastShot = now;
+                }
+                
+                // Оновлення куль ворогів
+                for (let j = enemy.bullets.length - 1; j >= 0; j--) {
+                    const bullet = enemy.bullets[j];
+                    bullet.y += bullet.speed;
+                    
+                    if (bullet.y > canvas.height) {
+                        enemy.bullets.splice(j, 1);
+                        continue;
+                    }
+                    
+                    if (checkCollision(bullet, player)) {
+                        player.hp -= 10;
+                        enemy.bullets.splice(j, 1);
+                        createExplosion(bullet.x, bullet.y, 10);
+                        if (player.hp <= 0) gameOver();
+                    }
+                }
+                
+                if (checkCollision(player, enemy)) {
+                    player.hp -= 15;
+                    enemies.splice(i, 1);
+                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2);
+                    if (player.hp <= 0) gameOver();
+                }
+            }
+            
+            // Оновлення боса
+            if (boss) {
+                boss.moveTimer++;
+                if (boss.moveTimer > 60) {
+                    boss.movePattern = (boss.movePattern + 1) % 4;
+                    boss.moveTimer = 0;
+                }
+                
+                switch (boss.movePattern) {
+                    case 0: boss.x += boss.speed; break;
+                    case 1: boss.y += boss.speed; break;
+                    case 2: boss.x -= boss.speed; break;
+                    case 3: boss.y -= boss.speed; break;
+                }
+                
+                if (Math.abs(boss.rotation - boss.targetRotation) < 1) {
+                    boss.targetRotation = Math.random() * 30 - 15;
+                }
+                
+                if (boss.rotation < boss.targetRotation) {
+                    boss.rotation += boss.rotationSpeed;
+                } else {
+                    boss.rotation -= boss.rotationSpeed;
+                }
+                
+                // Постріл боса
+                const now = Date.now();
+                if (now - boss.lastShot > boss.shootDelay) {
+                    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+                        boss.bullets.push({
+                            x: boss.x + boss.width/2,
+                            y: boss.y + boss.height/2,
+                            width: 8,
+                            height: 8,
+                            speedX: Math.cos(angle) * 4,
+                            speedY: Math.sin(angle) * 4
+                        });
+                    }
+                    boss.lastShot = now;
+                }
+                
+                // Оновлення куль боса
+                for (let i = boss.bullets.length - 1; i >= 0; i--) {
+                    const bullet = boss.bullets[i];
+                    bullet.x += bullet.speedX;
+                    bullet.y += bullet.speedY;
+                    
+                    if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                        boss.bullets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    if (checkCollision(bullet, player)) {
+                        player.hp -= 15;
+                        boss.bullets.splice(i, 1);
+                        createExplosion(bullet.x, bullet.y, 15);
+                        if (player.hp <= 0) gameOver();
+                    }
+                }
+                
+                if (checkCollision(player, boss)) {
+                    player.hp -= 20;
+                    createExplosion(player.x, player.y, 30);
+                    if (player.hp <= 0) gameOver();
+                }
+            }
+            
+            // Оновлення монет
+            for (let i = coins.length - 1; i >= 0; i--) {
+                const coin = coins[i];
+                coin.y += coin.speed;
+                coin.rotation += 2;
+                
+                if (coin.y - coin.height > canvas.height) {
+                    coins.splice(i, 1);
+                    continue;
+                }
+                
+                if (checkCollision(player, coin)) {
+                    score += coin.value;
+                    coins.splice(i, 1);
+                }
+            }
+            
+            // Оновлення вибухів
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const explosion = explosions[i];
+                explosion.radius += explosion.growth;
+                explosion.alpha -= 0.02;
+                
+                if (explosion.alpha <= 0) {
+                    explosions.splice(i, 1);
+                }
+            }
+            
+            // Генерація нових об'єктів
+            const currentSpawnRates = {
+                asteroid: boss ? baseSpawnRates.asteroid * 0.6 : baseSpawnRates.asteroid,
+                enemy: boss ? baseSpawnRates.enemy * 0.6 : baseSpawnRates.enemy,
+                kit: baseSpawnRates.kit,
+                boss: baseSpawnRates.boss
+            };
+
+            if (Math.random() < currentSpawnRates.asteroid + level * 0.002) spawnAsteroid();
+            if (Math.random() < currentSpawnRates.enemy + level * 0.001) spawnEnemy();
+            if (Math.random() < currentSpawnRates.kit) spawnKit();
+
+            const bossCooldown = 20000 + level * 5000;
+            if (!bossActive && gameTime - lastBossTime > bossCooldown && Math.random() < currentSpawnRates.boss) {
+                spawnBoss();
+            }
+            
+            // Оновлення HUD
+            hpDisplay.textContent = player.hp;
+            scoreHud.textContent = score;
+            levelHud.textContent = level;
+        }
+
+        // Кінець гри
+        function gameOver() {
+            gameRunning = false;
+            scoreDisplay.textContent = `Ваш рахунок: ${score}`;
+            teamMessage.textContent = teams[currentTeam].message;
+            teamMessage.style.color = teams[currentTeam].color;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // Відображення гри
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Фон
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Зірки
+            if (!window.stars) {
+                window.stars = [];
+                for (let i = 0; i < 300; i++) {
+                    window.stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 1.5 + 0.5,
+                        alpha: Math.random() * 0.8 + 0.2,
+                        twinkleSpeed: Math.random() * 0.05 + 0.01,
+                        twinklePhase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            
+            const now = Date.now();
+            window.stars.forEach(star => {
+                star.twinklePhase += star.twinkleSpeed;
+                const twinkle = Math.sin(star.twinklePhase) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha * twinkle})`;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            
+            // Малювання гравця
+            if (images.player?.complete) {
+                drawImageWithAspect(ctx, images.player, player.x, player.y, player.width, player.height);
+            }
+            
+            // Малювання куль гравця
+            player.bullets.forEach(bullet => {
+                if (images.bullet?.complete) {
+                    ctx.drawImage(images.bullet, bullet.x, bullet.y, bullet.width, bullet.height);
+                }
+            });
+
+            // Малювання аптечок
+            kits.forEach(kit => {
+                if (images.kit?.complete) {
+                    drawRotatedImageWithAspect(
+                        ctx, 
+                        images.kit, 
+                        kit.x + kit.width/2, 
+                        kit.y + kit.height/2, 
+                        kit.width, 
+                        kit.height, 
+                        kit.rotation
+                    );
+                }
+            });
+            
+            // Малювання астероїдів
+            asteroids.forEach(asteroid => {
+                if (images.asteroid?.complete) {
+                    drawRotatedImageWithAspect(
+                        ctx, 
+                        images.asteroid, 
+                        asteroid.x + asteroid.width/2, 
+                        asteroid.y + asteroid.height/2, 
+                        asteroid.width, 
+                        asteroid.height, 
+                        asteroid.rotation
+                    );
+                }
+            });
+            
+            // Малювання ворогів
+            enemies.forEach(enemy => {
+                if (images.enemy?.complete) {
+                    drawRotatedImageWithAspect(
+                        ctx, 
+                        images.enemy, 
+                        enemy.x + enemy.width/2, 
+                        enemy.y + enemy.height/2, 
+                        enemy.width, 
+                        enemy.height, 
+                        enemy.rotation
+                    );
+                }
+                
+                enemy.bullets.forEach(bullet => {
+                    if (images.enemyBullet?.complete) {
+                        ctx.drawImage(images.enemyBullet, bullet.x, bullet.y, bullet.width, bullet.height);
+                    }
+                });
+            });
+            
+            // Малювання боса
+            if (boss && images.boss?.complete) {
+                drawRotatedImageWithAspect(
+                    ctx, 
+                    images.boss, 
+                    boss.x + boss.width/2, 
+                    boss.y + boss.height/2, 
+                    boss.width, 
+                    boss.height, 
+                    boss.rotation
+                );
+                
+                // HP боса
+                const hpPercent = boss.hp / boss.maxHp;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(boss.x, boss.y - 10, boss.width, 5);
+                ctx.fillStyle = hpPercent > 0.5 ? '#2ecc71' : hpPercent > 0.2 ? '#f39c12' : '#e74c3c';
+                ctx.fillRect(boss.x, boss.y - 10, boss.width * hpPercent, 5);
+                ctx.strokeStyle = '#000';
+                ctx.strokeRect(boss.x, boss.y - 10, boss.width, 5);
+            }
+            
+            // Малювання куль боса
+            if (boss) {
+                boss.bullets.forEach(bullet => {
+                    if (images.bossBullet?.complete) {
+                        ctx.drawImage(images.bossBullet, bullet.x, bullet.y, bullet.width, bullet.height);
+                    }
+                });
+            }
+            
+            // Малювання монет
+            coins.forEach(coin => {
+                if (images.coin?.complete) {
+                    drawRotatedImageWithAspect(
+                        ctx, 
+                        images.coin, 
+                        coin.x + coin.width/2, 
+                        coin.y + coin.height/2, 
+                        coin.width, 
+                        coin.height, 
+                        coin.rotation
+                    );
+                }
+            });
+            
+            // Малювання вибухів
+            explosions.forEach(explosion => {
+                ctx.globalAlpha = explosion.alpha;
+                const gradient = ctx.createRadialGradient(
+                    explosion.x, explosion.y, 0,
+                    explosion.x, explosion.y, explosion.radius
+                );
+                gradient.addColorStop(0, explosion.color);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        // Головний цикл гри
+        function gameLoop() {
+            update();
+            render();
+            if (gameRunning) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Обробники подій
+        startButton.addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            teamSelection.style.display = 'flex';
+        });
+
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            teamSelection.style.display = 'flex';
+        });
+
+        document.getElementById('team1').addEventListener('click', () => loadTeamImages(1));
+        document.getElementById('team2').addEventListener('click', () => loadTeamImages(2));
+        document.getElementById('team3').addEventListener('click', () => loadTeamImages(3));
+        document.getElementById('team4').addEventListener('click', () => loadTeamImages(4));
+        document.getElementById('team5').addEventListener('click', () => loadTeamImages(5));
+
+        // Початок гри
+        loadImages();
+    </script>
+</body>
+</html>
